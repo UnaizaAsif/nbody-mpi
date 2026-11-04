@@ -1,0 +1,6 @@
+bin/
+results/*.txt
+results/compare_BAD.csv
+results/*.log
+nohup.out
+__pycache__/
