@@ -15,6 +15,7 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <signal.h>
 #include <mpi.h>
 #include "common.h"
 
@@ -28,6 +29,7 @@ int main(int argc, char **argv) {
     int rank, P;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &P);
+    signal(SIGPIPE, SIG_IGN);   /* closing the viewer must not kill rank 0 */
 
     if (argc < 5) fail("Usage: mpirun -np P ./bin/mpi_live N STEPS EVERY OUTFILE");
     int N = atoi(argv[1]), T = atoi(argv[2]), every = atoi(argv[3]);
@@ -57,6 +59,7 @@ int main(int argc, char **argv) {
     init_bodies(N, pos, vel, m);
 
     FILE *f = NULL;
+    int viewer_ok = 1;
     double t_start = MPI_Wtime(), comm = 0;
     if (rank == 0) {
         f = fopen(out, "wb");                     /* blocks until the viewer opens the pipe */
@@ -87,19 +90,22 @@ int main(int argc, char **argv) {
         for (int k = 3*lo; k < 3*hi; k++)
             vel[k] += 0.5 * DT * acc[k];
 
-        if (rank == 0 && s % every == 0) {        /* rank 0 already has all positions */
+        if (rank == 0 && viewer_ok && s % every == 0) {   /* rank 0 already has all positions */
             double el = MPI_Wtime() - t_start;
             fwrite(&s, sizeof(int), 1, f);
             fwrite(&el, sizeof(double), 1, f);
             fwrite(&comm, sizeof(double), 1, f);
             fwrite(pos, sizeof(double), 3*N, f);
-            fflush(f);
+            if (fflush(f) != 0 || ferror(f)) {
+                viewer_ok = 0;
+                fprintf(stderr, "viewer closed at step %d; finishing the run without display\n", s);
+            }
         }
     }
 
     if (rank == 0) {
         int end = -1;
-        fwrite(&end, sizeof(int), 1, f);
+        if (viewer_ok) fwrite(&end, sizeof(int), 1, f);
         fclose(f);
         fprintf(stderr, "done: %d steps in %.2f s\n", T, MPI_Wtime() - t_start);
     }
