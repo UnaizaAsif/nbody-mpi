@@ -38,7 +38,8 @@ for N in main_N:
     plt.figure()
     plt.bar(d.P.astype(str), d.comp, label="compute")
     plt.bar(d.P.astype(str), d.comm, bottom=d.comp, label="communication")
-    plt.xlabel("Processes (P)"); plt.ylabel("Time (s)"); plt.legend()
+    plt.ylim(0, (d.comp + d.comm).max() * 1.15)
+    plt.xlabel("Processes (P)"); plt.ylabel("Time (s), max over ranks"); plt.legend()
     plt.title(f"Compute vs communication, N={N}")
     plt.savefig(f"results/breakdown_N{N}.png", dpi=150)
 
