@@ -8,4 +8,5 @@ gcc   $FLAGS -o bin/traj       src/traj.c       src/common.c -lm
 gcc   $FLAGS -o bin/seq_bh      src/seq_bh.c      src/bh.c src/common.c -lm
 gcc   $FLAGS -o bin/bh_accuracy src/bh_accuracy.c src/bh.c src/common.c -lm
 mpicc $FLAGS -o bin/mpi_bh      src/mpi_bh.c      src/bh.c src/common.c -lm
+mpicc $FLAGS -o bin/mpi_live    src/mpi_live.c    src/common.c -lm
 echo "Build OK"

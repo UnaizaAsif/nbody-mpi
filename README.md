@@ -38,7 +38,7 @@ sudo apt install -y build-essential openmpi-bin libopenmpi-dev \
 ./scripts/build.sh
 ```
 
-This builds seven programs in `bin/`:
+This builds eight programs in `bin/`:
 
 | Program | Purpose |
 |---|---|
@@ -49,6 +49,7 @@ This builds seven programs in `bin/`:
 | `seq_bh` | sequential Barnes-Hut |
 | `mpi_bh` | MPI Barnes-Hut (same decomposition and Allgatherv as `mpi_nbody`) |
 | `bh_accuracy` | force error of Barnes-Hut against the direct method for several theta |
+| `mpi_live` | MPI version that streams positions for the real-time viewer |
 
 ## 5. Run
 
@@ -156,12 +157,28 @@ repetitions are reported. Raw logs are in `results/` (`seq.csv`, `mpi.csv`,
 
 ```
 nbody/
-  src/        common.h common.c seq.c mpi_nbody.c mpi_nbody_3calls.c traj.c
+  src/        common.h common.c seq.c mpi_nbody.c mpi_nbody_3calls.c traj.c mpi_live.c
               bh.h bh.c seq_bh.c mpi_bh.c bh_accuracy.c
   scripts/    build.sh verify.sh verify.py run_seq.sh run_mpi.sh
               run_compare.sh plot.py compare.py plot_traj.py plot_extra.py
               verify_bh.sh run_bh_seq.sh run_bh.sh run_direct_again.sh plot_bh.py
+              animate.py live.sh live_view.py
   bin/        compiled programs
   results/    CSV logs and graphs
   README.md
 ```
+
+## 11. Real-time visualization
+
+`bin/mpi_live` runs the same MPI simulation (same decomposition, Allgatherv and
+integrator) and streams positions to a viewer while it runs. Rank 0 already
+holds every position after each Allgatherv, so the display needs no extra MPI
+communication. Bodies are coloured by the rank that owns them.
+
+```bash
+sudo apt install -y python3-tk      # once, if the window does not open
+./scripts/live.sh 500 3000 5 4      # N=500, 3000 steps, draw every 5 steps, P=4
+```
+
+Close the window to stop. `python3 scripts/animate.py` makes a GIF
+(`results/nbody.gif`) from `results/trajectory.csv` instead.
